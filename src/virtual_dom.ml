@@ -12,7 +12,7 @@ module Property = struct
     | MayStopPropagation of ('a * bool) BsOakJson.Decode.decoder
     | MayPreventDefault of ('a * bool) BsOakJson.Decode.decoder
     | Custom of 'a options BsOakJson.Decode.decoder
-
+    
   type _ t =
     | Value : string * BsOakJson.Encode.value -> _ t
     | On : string * 'a handler -> 'a t
