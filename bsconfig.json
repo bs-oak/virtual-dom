@@ -1,6 +1,6 @@
 {
-  "name": "bs-oak-virtual-dom",
-  "version": "0.1.2",
+  "name": "@bs-oak/virtual-dom",
+  "version": "0.1.3",
   "sources": [
     {
       "dir": "src",
@@ -18,7 +18,7 @@
   "suffix": ".bs.js",
   "namespace": true,
   "bs-dependencies": [
-    "bs-oak-json",
+    "@bs-oak/json",
     "bs-webapi"
   ],
   "bs-dev-dependencies": [
