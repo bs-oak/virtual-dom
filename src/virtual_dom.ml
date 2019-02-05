@@ -15,11 +15,15 @@ module Property = struct
     
   type _ t =
     | Value : string * BsOakJson.Encode.value -> _ t
+    | ValueNS : string * string * BsOakJson.Encode.value -> _ t
     | On : string * 'a handler -> 'a t
     | Tagger : ('a -> 'b) * 'a t -> 'b t
 
   let create key value =
     Value (key, value)
+
+  let create_ns namespace key value =
+    ValueNS (namespace, key, value)    
 
   let on key handler =
     On (key, handler)
@@ -27,6 +31,8 @@ module Property = struct
   let map tagger property =
     Tagger (tagger, property)
 
+  external attribute_hook: string -> BsOakJson.Encode.value -> BsOakJson.Encode.value = "virtual-dom/virtual-hyperscript/hooks/attribute-hook.js" [@@bs.module]
+   
   let to_dict callback properties =
     let dict = Property_dict.empty () in
 
@@ -73,6 +79,7 @@ module Property = struct
     let rec eval : type a . (a -> unit) -> a t -> unit = fun callback' property ->
       match property with
       | Value (key, value) -> Js.Dict.set dict key value
+      | ValueNS (namespace, key, value) -> Js.Dict.set dict key (attribute_hook namespace value)
       | On (key, handler) -> 
         Js.Dict.set dict key (Obj.magic (fun event -> 
           let decoder =
@@ -109,6 +116,9 @@ module Node = struct
     Text str
 
   let node tag properties children =
+    (* prevent xss attack vector *)
+    let tag = if tag = "script" then "p" else tag in
+
     Node (tag, properties, children)
 
   let map tagger node =

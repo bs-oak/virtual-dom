@@ -15,6 +15,8 @@ module Property : sig
 
   val create : string -> BsOakJson.Encode.value -> 'a t
 
+  val create_ns : string -> string -> BsOakJson.Encode.value -> 'a t
+
   val on : string -> 'a handler -> 'a t
 
   val map : ('a -> 'b) -> 'a t -> 'b t
