@@ -107,12 +107,12 @@ let () = describe "Virtual_dom" (fun () ->
         |> toBe("<table class=\"is-hidden\" width=\"123\"></table>")
       );
     );
-    describe "#property_ns" (fun () -> 
+    describe "#attribute_ns" (fun () -> 
       test "returns a dom with namespaced properties assigned" (fun () ->
         expect (
           Virtual_dom.Node.node "div" [] [ 
             Virtual_dom.Node.node "circle" [ 
-              Virtual_dom.Attribute.property_ns "http://www.w3.org/1999/xlink"  "xlink:href" (BsOakJson.Encode.string "http://example.com");
+              Virtual_dom.Attribute.attribute_ns "http://www.w3.org/1999/xlink"  "xlink:href" "http://example.com";
             ] []
           ] 
           |> inner_html

@@ -1,5 +1,25 @@
+(* security *)
+let no_script tag =
+  if tag = "script" then "p" else tag
+
+let no_inner_html_or_form_action key =
+  if key = "innerHTML" || key = "formAction" then "data-" ^ key else key
+
+let no_javascript_or_html_uri_value (value : BsOakJson.Encode.value ) : BsOakJson.Encode.value =
+  let re = [%re "/^\\s*(javascript:|data:text\\/html)/i"] in
+  if Js.Re.test (Obj.magic value) re then BsOakJson.Encode.string "" else value
+
+let no_javascript_or_html_uri_string value =
+  let re = [%re "/^\\s*(javascript:|data:text\\/html)/i"] in
+  if Js.Re.test value re then "" else value
+
+let no_on_or_form_action key =
+  let re = [%re "/^(on|formAction$)/i"] in
+  if Js.Re.test key re then "data-" ^ key else key
+(* /security *)
+
 module Attribute = struct
-  external attribute_hook: string -> BsOakJson.Encode.value -> BsOakJson.Encode.value = "virtual-dom/virtual-hyperscript/hooks/attribute-hook.js" [@@bs.module]
+  external attribute_hook: string -> string -> BsOakJson.Encode.value = "virtual-dom/virtual-hyperscript/hooks/attribute-hook.js" [@@bs.module]
 
   type 'a options =
     { message: 'a
@@ -14,20 +34,20 @@ module Attribute = struct
     | Custom of 'a options BsOakJson.Decode.decoder
     
   type _ t =
-    | Prop : string * BsOakJson.Encode.value -> _ t
-    | PropNS : string * string * BsOakJson.Encode.value -> _ t
     | Attr : string * string -> _ t
+    | AttrNS : string * string * string -> _ t
+    | Prop : string * BsOakJson.Encode.value -> _ t
     | On : string * 'a handler -> 'a t
     | Tagger : ('a -> 'b) * 'a t -> 'b t
 
   let attribute key value =
-    Attr (key, value)
+    Attr (no_on_or_form_action key, no_javascript_or_html_uri_string value)
+
+  let attribute_ns namespace key value =
+    AttrNS (namespace, no_on_or_form_action key, no_javascript_or_html_uri_string value)
 
   let property key value =
-    Prop (key, value)
-
-  let property_ns namespace key value =
-    PropNS (namespace, key, value)
+    Prop (no_inner_html_or_form_action key, no_javascript_or_html_uri_value value)
 
   let on key handler =
     On (key, handler)
@@ -81,9 +101,9 @@ module Attribute = struct
 
     let rec eval : type a . (a -> unit) -> a t -> unit = fun callback' property ->
       match property with
-      | Prop (key, value) -> Js.Dict.set props key value
-      | PropNS (namespace, key, value) -> Js.Dict.set props key (attribute_hook namespace value)
       | Attr (key, value) -> Js.Dict.set attrs key (BsOakJson.Encode.string value)      
+      | AttrNS (namespace, key, value) -> Js.Dict.set props key (attribute_hook namespace value)
+      | Prop (key, value) -> Js.Dict.set props key value
       | On (key, handler) -> 
         Js.Dict.set props key (Obj.magic (fun event -> 
           let decoder = BsOakJson.Decode.and_then (apply_event_options event) (handler_decoder handler) in
@@ -118,9 +138,7 @@ module Node = struct
     Text str
 
   let node tag attributes children =
-    (* prevent xss attack vector *)
-    let tag = if tag = "script" then "p" else tag in
-    Node (tag, attributes, children)
+    Node (no_script tag, attributes, children)
 
   let node_ns namespace tag attributes children =
     let ns_prop = Attribute.property "namespace" (BsOakJson.Encode.string namespace) in

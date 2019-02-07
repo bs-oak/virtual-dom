@@ -15,9 +15,9 @@ module Attribute : sig
 
   val attribute : string -> string -> 'a t
 
+  val attribute_ns : string -> string -> string -> 'a t
+  
   val property : string -> BsOakJson.Encode.value -> 'a t
-
-  val property_ns : string -> string -> BsOakJson.Encode.value -> 'a t
 
   val on : string -> 'a handler -> 'a t
 
