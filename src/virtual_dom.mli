@@ -1,4 +1,4 @@
-module Property : sig
+module Attribute : sig
   type 'a t
 
   type 'a options =
@@ -13,9 +13,11 @@ module Property : sig
     | MayPreventDefault of ('a * bool) BsOakJson.Decode.decoder
     | Custom of 'a options BsOakJson.Decode.decoder
 
-  val create : string -> BsOakJson.Encode.value -> 'a t
+  val attribute : string -> string -> 'a t
 
-  val create_ns : string -> string -> BsOakJson.Encode.value -> 'a t
+  val property : string -> BsOakJson.Encode.value -> 'a t
+
+  val property_ns : string -> string -> BsOakJson.Encode.value -> 'a t
 
   val on : string -> 'a handler -> 'a t
 
@@ -27,7 +29,7 @@ module Node : sig
 
   val text : string -> 'a t
 
-  val node : string -> 'a Property.t list -> 'a t list -> 'a t
+  val node : string -> 'a Attribute.t list -> 'a t list -> 'a t
 
   val map : ('a -> 'b) -> 'a t -> 'b t
 end

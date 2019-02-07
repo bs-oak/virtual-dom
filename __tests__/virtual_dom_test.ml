@@ -48,47 +48,52 @@ let () = describe "Virtual_dom" (fun () ->
     );    
   );
 
-  describe "Property" (fun () -> 
-    describe "#create" (fun () -> 
-      test "returns a dom with attributes" (fun () ->
+  describe "Attribute" (fun () -> 
+    describe "#property" (fun () -> 
+      test "returns a dom with properties assigned" (fun () ->
         expect (
-          Virtual_dom.Node.node "div" [] 
-          [ Virtual_dom.Node.node "table" 
-            [ Virtual_dom.Property.create "className" (BsOakJson.Encode.string "is-hidden")
-            ; Virtual_dom.Property.create "width" (BsOakJson.Encode.int 123)
-            ] 
-            []
+          Virtual_dom.Node.node "div" [] [ 
+            Virtual_dom.Node.node "table" [ 
+              Virtual_dom.Attribute.property "className" (BsOakJson.Encode.string "is-hidden"); 
+              Virtual_dom.Attribute.property "width" (BsOakJson.Encode.int 123)
+            ] []
           ] 
           |> inner_html
         )
         |> toBe("<table class=\"is-hidden\" width=\"123\"></table>")
       );
-      test "returns a dom with namespaced attributes" (fun () ->
-        expect (
-          Virtual_dom.Node.node "div" [] 
-          [ Virtual_dom.Node.node "table" 
-            [ Virtual_dom.Property.create "className" (BsOakJson.Encode.string "is-hidden")
-            ; Virtual_dom.Property.create "width" (BsOakJson.Encode.int 123)
-            ; Virtual_dom.Property.create_ns "http://www.w3.org/1999/xlink" "xlink:href" (BsOakJson.Encode.string "hello")
-            ] 
-            []
-          ] 
-          |> inner_html
-        )
-        |> toBe("<table class=\"is-hidden\" width=\"123\" xlink:href=\"hello\"></table>")
-      );        
-      test "returns nested dom nodes" (fun () ->
-        expect (
-          Virtual_dom.Node.node "div" [] 
-          [ Virtual_dom.Node.node "span" [] 
-            [ Virtual_dom.Node.node "span" [] []
-            ; Virtual_dom.Node.node "span" [] []
-            ]
-          ] 
-          |> inner_html
-        )
-        |> toBe("<span><span></span><span></span></span>")
-      );       
+
+
+
+
+
     );
+    describe "#property_ns" (fun () -> 
+      test "returns a dom with namespaced properties assigned" (fun () ->
+        expect (
+          Virtual_dom.Node.node "div" [] [ 
+            Virtual_dom.Node.node "circle" [ 
+              Virtual_dom.Attribute.property_ns "http://www.w3.org/1999/xlink"  "xlink:href" (BsOakJson.Encode.string "http://example.com");
+            ] []
+          ] 
+          |> inner_html
+        )
+        |> toBe("<circle xlink:href=\"http://example.com\"></circle>")
+      );
+    );
+    describe "#attribute" (fun () -> 
+      test "returns a dom with attributes assigned" (fun () ->
+        expect (
+          Virtual_dom.Node.node "div" [] [ 
+            Virtual_dom.Node.node "table" [ 
+              Virtual_dom.Attribute.attribute "class" "is-active"; 
+              Virtual_dom.Attribute.attribute "width" "234"
+            ] []
+          ] 
+          |> inner_html
+        )
+        |> toBe("<table class=\"is-active\" width=\"234\"></table>")
+      );
+    );    
   );
 )

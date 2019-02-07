@@ -1,6 +1,6 @@
-module Property_dict = Js.Dict
+module Attribute = struct
+  external attribute_hook: string -> BsOakJson.Encode.value -> BsOakJson.Encode.value = "virtual-dom/virtual-hyperscript/hooks/attribute-hook.js" [@@bs.module]
 
-module Property = struct
   type 'a options =
     { message: 'a
     ; stop_propagation: bool
@@ -14,16 +14,20 @@ module Property = struct
     | Custom of 'a options BsOakJson.Decode.decoder
     
   type _ t =
-    | Value : string * BsOakJson.Encode.value -> _ t
-    | ValueNS : string * string * BsOakJson.Encode.value -> _ t
+    | Prop : string * BsOakJson.Encode.value -> _ t
+    | PropNS : string * string * BsOakJson.Encode.value -> _ t
+    | Attr : string * string -> _ t
     | On : string * 'a handler -> 'a t
     | Tagger : ('a -> 'b) * 'a t -> 'b t
 
-  let create key value =
-    Value (key, value)
+  let attribute key value =
+    Attr (key, value)
 
-  let create_ns namespace key value =
-    ValueNS (namespace, key, value)    
+  let property key value =
+    Prop (key, value)
+
+  let property_ns namespace key value =
+    PropNS (namespace, key, value)
 
   let on key handler =
     On (key, handler)
@@ -31,10 +35,9 @@ module Property = struct
   let map tagger property =
     Tagger (tagger, property)
 
-  external attribute_hook: string -> BsOakJson.Encode.value -> BsOakJson.Encode.value = "virtual-dom/virtual-hyperscript/hooks/attribute-hook.js" [@@bs.module]
-   
   let to_dict callback properties =
-    let dict = Property_dict.empty () in
+    let props = Js.Dict.empty () in
+    let attrs = Js.Dict.empty () in
 
     let handler_decoder = function
       | Normal decoder ->
@@ -78,27 +81,26 @@ module Property = struct
 
     let rec eval : type a . (a -> unit) -> a t -> unit = fun callback' property ->
       match property with
-      | Value (key, value) -> Js.Dict.set dict key value
-      | ValueNS (namespace, key, value) -> Js.Dict.set dict key (attribute_hook namespace value)
+      | Prop (key, value) -> Js.Dict.set props key value
+      | PropNS (namespace, key, value) -> Js.Dict.set props key (attribute_hook namespace value)
+      | Attr (key, value) -> Js.Dict.set attrs key (BsOakJson.Encode.string value)      
       | On (key, handler) -> 
-        Js.Dict.set dict key (Obj.magic (fun event -> 
-          let decoder =
-            handler_decoder handler
-            |> BsOakJson.Decode.and_then (apply_event_options event)
-          in
+        Js.Dict.set props key (Obj.magic (fun event -> 
+          let decoder = BsOakJson.Decode.and_then (apply_event_options event) (handler_decoder handler) in
           let val' = (BsOakJson.Decode.decode_value decoder (Obj.magic event)) in
           Belt.Result.mapWithDefault val' () callback' 
         ))
       | Tagger (fn, property) -> eval (fun x -> callback' (fn x))  property
     in
     let () = List.iter (eval callback) properties in
-    dict
+    let () = Js.Dict.set props "attributes" (Obj.magic attrs) in
+    props
 end
 
 module Vnode = struct
   type t
   
-  external create : string -> BsOakJson.Encode.value Property_dict.t -> t array -> t = "h" 
+  external create : string -> BsOakJson.Encode.value Js.Dict.t -> t array -> t = "h" 
   [@@bs.module "virtual-dom/index.js"]
   
   external create_text : string -> t = "VText" 
@@ -109,7 +111,7 @@ end
 module Node = struct
   type _ t =
     | Text : string -> _ t
-    | Node : string * 'a Property.t list * 'a t list -> 'a t
+    | Node : string * 'a Attribute.t list * 'a t list -> 'a t
     | Tagger : ('a -> 'b) * 'a t -> 'b t
 
   let text str =
@@ -128,7 +130,7 @@ module Node = struct
     match node with
     | Text text -> Vnode.create_text text
     | Node (tag, properties, children) ->
-      let property_dict = Property.to_dict cb properties in
+      let property_dict = Attribute.to_dict cb properties in
       let children_ar =      
         List.map (to_vnode cb) children 
         |> Array.of_list
