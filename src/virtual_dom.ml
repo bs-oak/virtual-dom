@@ -126,6 +126,19 @@ module Node = struct
     let ns_prop = Attribute.property "namespace" (BsOakJson.Encode.string namespace) in
     node tag (ns_prop :: attributes) children
 
+  let key_node_pair_to_node (key, node') =
+    match node' with
+    | Node (tag, attributes, children) -> 
+      let key_attribute = Attribute.property "key" (BsOakJson.Encode.string key) in
+      Node (tag, key_attribute :: attributes, children)
+    | _ -> node'
+
+  let keyed_node tag attributes key_child_pairs =
+    node tag attributes (List.map key_node_pair_to_node key_child_pairs)
+  
+  let keyed_node_ns namespace tag attributes key_child_pairs =
+    node_ns namespace tag attributes (List.map key_node_pair_to_node key_child_pairs)
+
   let map tagger node =
     Tagger (tagger, node)
 

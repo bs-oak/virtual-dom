@@ -33,6 +33,10 @@ module Node : sig
 
   val node_ns : string -> string -> 'a Attribute.t list -> 'a t list -> 'a t
 
+  val keyed_node : string -> 'a Attribute.t list -> (string * 'a t) list -> 'a t
+
+  val keyed_node_ns : string -> string -> 'a Attribute.t list -> (string * 'a t) list -> 'a t
+
   val map : ('a -> 'b) -> 'a t -> 'b t
 end
 
