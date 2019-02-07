@@ -9,6 +9,18 @@ let () = describe "Virtual_dom" (fun () ->
     |> Webapi.Dom.Element.innerHTML 
   in
 
+  let namespace_uri node =
+    let get_namespace_uri = [%raw {|
+      function(el) {
+        return el.namespaceURI;
+      }
+    |}] in
+    Virtual_dom.empty ()
+    |> Virtual_dom.patch (fun _ -> ()) node
+    |> Virtual_dom.element
+    |> get_namespace_uri
+  in
+
   describe "Node" (fun () -> 
     describe "#node" (fun () -> 
       test "returns a dom node" (fun () ->
@@ -33,6 +45,38 @@ let () = describe "Virtual_dom" (fun () ->
         |> toBe("<span><span></span><span></span></span>")
       );       
     );
+    describe "#node_ns" (fun () -> 
+      test "returns a dom node" (fun () ->
+        expect (
+          Virtual_dom.Node.node_ns "http://www.w3.org/2000/svg" "div" [] 
+          [ Virtual_dom.Node.node_ns "http://www.w3.org/2000/svg" "span" [] []
+          ] 
+          |> inner_html
+        )
+        |> toBe("<span></span>")
+      ); 
+      test "returns nested dom nodes" (fun () ->
+        expect (
+          Virtual_dom.Node.node_ns "http://www.w3.org/2000/svg" "div" [] 
+          [ Virtual_dom.Node.node_ns "http://www.w3.org/2000/svg" "span" [] 
+            [ Virtual_dom.Node.node_ns "http://www.w3.org/2000/svg" "span" [] []
+            ; Virtual_dom.Node.node_ns "http://www.w3.org/2000/svg" "span" [] []
+            ]
+          ] 
+          |> inner_html
+        )
+        |> toBe("<span><span></span><span></span></span>")
+      );  
+
+      test "returns a vnode with a custom namespace" (fun () ->
+        expect (
+          Virtual_dom.Node.node_ns "http://www.w3.org/2000/svg" "div" [] []
+          |> namespace_uri
+        )
+        |> toBe("http://www.w3.org/2000/svg")
+      );     
+    );
+
     describe "#text" (fun () -> 
       test "returns a text node" (fun () ->
         expect (
@@ -62,11 +106,6 @@ let () = describe "Virtual_dom" (fun () ->
         )
         |> toBe("<table class=\"is-hidden\" width=\"123\"></table>")
       );
-
-
-
-
-
     );
     describe "#property_ns" (fun () -> 
       test "returns a dom with namespaced properties assigned" (fun () ->

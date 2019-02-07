@@ -31,6 +31,8 @@ module Node : sig
 
   val node : string -> 'a Attribute.t list -> 'a t list -> 'a t
 
+  val node_ns : string -> string -> 'a Attribute.t list -> 'a t list -> 'a t
+
   val map : ('a -> 'b) -> 'a t -> 'b t
 end
 

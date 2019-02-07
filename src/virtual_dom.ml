@@ -117,11 +117,14 @@ module Node = struct
   let text str =
     Text str
 
-  let node tag properties children =
+  let node tag attributes children =
     (* prevent xss attack vector *)
     let tag = if tag = "script" then "p" else tag in
+    Node (tag, attributes, children)
 
-    Node (tag, properties, children)
+  let node_ns namespace tag attributes children =
+    let ns_prop = Attribute.property "namespace" (BsOakJson.Encode.string namespace) in
+    node tag (ns_prop :: attributes) children
 
   let map tagger node =
     Tagger (tagger, node)
@@ -129,13 +132,13 @@ module Node = struct
   let rec to_vnode : type a . (a -> unit) -> a t -> Vnode.t = fun cb node ->
     match node with
     | Text text -> Vnode.create_text text
-    | Node (tag, properties, children) ->
-      let property_dict = Attribute.to_dict cb properties in
+    | Node (tag, attributes, children) ->
+      let attr_dict = Attribute.to_dict cb attributes in
       let children_ar =      
         List.map (to_vnode cb) children 
         |> Array.of_list
       in
-      Vnode.create tag property_dict children_ar
+      Vnode.create tag attr_dict children_ar
     | Tagger (fn, node) -> to_vnode  (fun x -> cb(fn x))  node
 end
 
