@@ -1,6 +1,6 @@
 {
   "name": "@bs-oak/virtual-dom",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "scripts": {
     "clean": "bsb -clean-world",
     "build": "bsb -make-world",
@@ -13,7 +13,7 @@
   "author": "Erik Lott",
   "license": "MIT",
   "dependencies": {
-    "@bs-oak/json": "^0.1.5",
+    "@bs-oak/json": "^0.1.6",
     "bs-webapi": "^0.13.1",
     "virtual-dom": "^2.1.1"
   },
